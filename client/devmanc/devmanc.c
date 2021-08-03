@@ -13,18 +13,16 @@
 #define PORT 8080
 
 char buffer[1024]; 
-FILE *file = NULL;
-struct info client;
 
 int main(int argc, char const *argv[]) 
 { 
+	info client;
 	int sfd;
     	struct sockaddr_in svaddr;  
     	char *ok = "OK"; 
     	char *data = "data"; 
 	sfd = socket(AF_INET, SOCK_STREAM, 0);
-     	if (sfd < 0) 
-        {	
+     	if (sfd < 0) {	
         	perror("ERROR socket");
         	exit(EXIT_FAILURE);
 	}
@@ -33,21 +31,16 @@ int main(int argc, char const *argv[])
     	svaddr.sin_addr.s_addr = inet_addr("127.0.0.1");  
     	svaddr.sin_port = htons(PORT); 
 	
-    	if (connect(sfd, (struct sockaddr *)&svaddr, sizeof(svaddr)) < 0) 
-    	{ 
+    	if (connect(sfd, (struct sockaddr *)&svaddr, sizeof(svaddr)) < 0) { 
         	perror("ERROR connect");
         	exit(EXIT_FAILURE);
     	} 
     	write(sfd, data, strlen(data));
-    	Getusername();
-    	write(sfd, client.user, strlen(client.user));
-    	GetCPU();
-    	write(sfd, client.cpu, strlen(client.cpu)); 
-    	Getmemory();
-    	write(sfd, client.memory, strlen(client.memory));
-    	
-    	while(1)
-    	{
+    	GetInfo(client.user, client.cpu, client.memory);
+    	Send_char(sfd, client.user);
+    	Send_char(sfd, client.cpu);
+    	Send_char(sfd, client.memory);
+    	while(1) {
              	printf("Send: ");
              	memset(buffer, 0, sizeof(buffer));
         	fgets(buffer, sizeof(buffer), stdin);
@@ -63,13 +56,10 @@ void Delete(char s[], char s1[])
 	int len = strlen(s);
 	int len1 = strlen(s1);
 	int i;
-	for(i=0; i<len; i++)
-	{
-		if((s[i]==s1[0]) && (s[i+len1-1]==s1[len1-1]))
-		{
+	for(i=0; i<len; i++) {
+		if((s[i]==s1[0]) && (s[i+len1-1]==s1[len1-1])) {
 			int j;
-			for(j=i; j<len; j++)
-			{
+			for(j=i; j<len; j++) {
 				s[j]=s[j+len1];
 			}
 			s[j+len1]='\0';
@@ -78,56 +68,64 @@ void Delete(char s[], char s1[])
 	}
 }
 
-void GetCPU()
-{
-	FILE *file = NULL;      
+char *GetCPU(char *cpu)
+{   
     	memset(buffer, 0, sizeof(buffer)); 
-    	memset(client.cpu, 0, sizeof(client.cpu));
-  
-    	file = popen("lshw -c cpu","r"); 
+    	memset(cpu, 0, sizeof(cpu));
+    	FILE *file = popen("lshw -c cpu","r"); 
     	fgets(buffer, sizeof(buffer), file);  
     
-    	while(NULL != fgets(buffer, sizeof(buffer), file)) 
-    	{  
-    		if (strstr(buffer,"product")!=NULL)
-    		{
-            		strcat(client.cpu, buffer);
+    	while(NULL != fgets(buffer, sizeof(buffer), file)) {  
+    		if (strstr(buffer,"product")!=NULL) {
+            		strcat(cpu, buffer);
             	} 
     	}  
     	pclose(file);   
-    	Delete(client.cpu,"product:");
-    	Delete(client.cpu,"\n");
+    	Delete(cpu,"product:");
+    	Delete(cpu,"\n");
 }
 
-void Getmemory()
+char *Getmemory(char *mem)
 {     
     	memset(buffer, 0, sizeof(buffer)); 
-    	memset(client.memory, 0, sizeof(client.memory));
-  
-    	file = popen("lshw -c memory","r"); 
+    	memset(mem, 0, sizeof(mem));
+    	FILE *file = popen("lshw -c memory","r"); 
     	fgets(buffer, sizeof(buffer), file);  
     
-    	while(NULL != fgets(buffer, sizeof(buffer), file)) 
-    	{  
-    		if (strstr(buffer,"size")!=NULL)
-    		{
-            		strcat(client.memory, buffer);
+    	while(NULL != fgets(buffer, sizeof(buffer), file)) {  
+    		if (strstr(buffer,"size")!=NULL) {
+            		strcat(mem, buffer);
             	} 
     	}  
     	pclose(file);   
-    	Delete(client.memory,"size:");
-    	Delete(client.memory,"\n");
-    	strcat(client.memory, " System memory");
+    	Delete(mem,"size:");
+    	Delete(mem,"\n");
+    	strcat(mem, " System memory");
 }
 
-void Getusername()
+char *Getusername(char *name)
 {
-	FILE *file = NULL;      
     	memset(buffer, 0, sizeof(buffer)); 
-    	memset(client.user, 0, sizeof(client.user));
-  
-    	file = popen("users","r"); 
+    	memset(name, 0, sizeof(name));
+    	FILE *file = popen("users","r"); 
     	fgets(buffer, sizeof(buffer), file);  
-    	strcpy(client.user, buffer);
-    	Delete(client.user,"\n");
+    	strcpy(name, buffer);
+    	pclose(file);
+    	Delete(name,"\n");
+}
+
+void GetInfo(char *name, char *cpu, char *mem)
+{
+	Getusername(name);
+    	GetCPU(cpu);
+    	Getmemory(mem);
+}
+
+void Send_char (int sfd, char *data)
+{
+	memset(buffer, 0, 256);
+	read(sfd, buffer, 255);
+	if (strcmp(buffer, "OK") == 0) {
+		write(sfd , data , strlen(data));
+	}
 }
