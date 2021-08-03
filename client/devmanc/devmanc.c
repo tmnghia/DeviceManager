@@ -9,29 +9,30 @@
 #define BUF_SIZE 1024
 #define SIZE 1024
 
-struct inform 
+typedef struct inform 
 {
-   char  *cpu;
-   char  *memory;
-   char  *user;
-} client;
+   char  cpu[128];
+   char  memory[128];
+   char  user[128];
+}clientInfo;
 
-
-
+char buffer[1024];
 void error_handling(char *message);
-void getusername();
-void getCPU();
-void getMemory();
+int  getMemory(char *mem);
+int  getCPU(char *cpu);
+int  getUser(char *user);
 
-
-
+  
 
 int main(int argc, char *argv[])
-{
+{	
+
+	
 	int sock;
 	char message[BUF_SIZE];
 	int str_len;
 	struct sockaddr_in serv_adr;
+	
 
 	if(argc!=3) {
 		printf("Usage : %s <IP> <port>\n", argv[0]);
@@ -50,92 +51,91 @@ int main(int argc, char *argv[])
 	if(connect(sock, (struct sockaddr*)&serv_adr, sizeof(serv_adr))==-1)
 		error_handling("connect() error!");
 	else
-		printf("Connected...........");
-	  
-	  
-	 getusername();
-	 getCPU();
-	 getMemory(); 
-	        
+		printf("Connected...........\n");
+	   
+	    clientInfo *client = NULL;
+
+            client = (clientInfo*) calloc(1, sizeof(clientInfo));
+	    getCPU(client->cpu);
+	    printf("cpu: %s\n", client->cpu);
+	    
+	    getUser(client->user);
+	    printf("User: %s\n", client->user);
+
+	    getMemory(client->memory);
+	    printf("memory: %s\n", client->memory);
+
+	    
+	    
+
 	 while(1)
 	 {	 
 	       
-		
-               send (sock,&client, sizeof(struct inform),0);
-              //write(sock, message, strlen(message));
-               printf ("Inform sent to Server\n");    
+               send (sock,client, sizeof(struct inform),0);
+               //printf ("Inform sent to Server\n");          
         } 
 	close(sock);
+	free(client);
 	return 0;
+	
 }
 
 
-void getCPU()
-{
-	FILE *file;      
-    	memset(buffer, 0, sizeof(buffer)); 
-    	memset(client.cpu, 0, sizeof(client.cpu));
-        
-         if (fp == NULL) {
-        printf("Failed to run command\n" );
-        exit(1);
-  	}	
- 
-    	file = popen("lshw -c cpu","r"); 
-    	fgets(buffer, sizeof(buffer), file);  
-    
-    	while(NULL != fgets(buffer, sizeof(buffer), file)) 
-    	{  
-    		if (strstr(buffer,"product")!=NULL)
-    		{
-            		strcat(client.cpu, buffer);
-            	} 
-    	}  
-    	pclose(file);   
+int  getCPU(char *cpu)
+{	
+	char buffer[1024]  = {0};
+   	char *op        = NULL;
+	FILE *file	= NULL;      
+    	int rc = 0; 
     	
+    	file = popen("lshw -c cpu 2>null | grep size", "r");
+    	 op = fgets(buffer, sizeof(buffer), file);
+    	if (op == NULL) {
+        printf("failed");
+    	}
+    	sprintf(cpu, "%s", buffer);
+    	
+    	pclose(file);
     	return 0;
-    	
 }
 
 
 
-void getMemory()
+int  getMemory(char *mem)
 {      
 
-	FILE *file;
-    	memset(buffer, 0, sizeof(buffer)); 
-    	memset(client.memory, 0, sizeof(client.memory));
-  
-   	if (fp == NULL) {
-        printf("Failed to run command\n" );
-        exit(1);
-  	}	
- 
-    	file = popen("lshw -c memory","r"); 
-    	fgets(buffer, sizeof(buffer), file);  
-    
-    	while(NULL != fgets(buffer, sizeof(buffer), file)) 
-    	{  
-    		if (strstr(buffer,"size")!=NULL)
-    		{
-            		strcat(client.memory, buffer);
-            	} 
-    	}  
+	char buffer[1024]  = {0};
+    	char *op        = NULL;
+    	FILE *file      = NULL;
+    	int rc = 0;
+
+    	file = popen("lshw -c memory 2>null | grep size", "r"); 
+    	op = fgets(buffer, sizeof(buffer), file);
+    if (op == NULL) {
+        printf("failed");
+    }	
+   	 sprintf(mem, "%s", buffer);
+    	
     	pclose(file);   
     	return 0;
 }
 
-void getusername()
+int  getUser(char *user)
 {
-	FILE *file = NULL;      
-    	memset(buffer, 0, sizeof(buffer)); 
-    	memset(client.user, 0, sizeof(client.user));
-  
+	
+	char buffer[1024]  = {0};
+    	char *op        = NULL;
+    	FILE *file      = NULL;
+    	int rc = 0;
     	file = popen("users","r"); 
-    	fgets(buffer, sizeof(buffer), file);  
-    	strcpy(client.user, buffer);
-    	pclose(file);   
-    	return 0;
+    	op = fgets(buffer, sizeof(buffer), file);
+    	 if (op == NULL) {
+        printf("failed\n");
+    }
+       sprintf(user, "%s", buffer);
+
+    	pclose(file);  
+    	return 0; 
     	
 }
 

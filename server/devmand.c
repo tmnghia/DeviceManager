@@ -13,13 +13,15 @@ void error_handling(char *buf);
 
 
 
-struct inform
-{	char *cpu;
-	char *memory;
-} myinform;
+typedef struct inform 
+{
+   char  cpu[128];
+   char  memory[128];
+   char  user[128];
+}clientInfo;
 
 
-
+clientInfo *client;
 int main(int argc, char *argv[])
 {
 	int serv_sock, clnt_sock;
@@ -73,8 +75,10 @@ int main(int argc, char *argv[])
 				event.events=EPOLLIN;
 				event.data.fd=clnt_sock;
 				epoll_ctl(epfd, EPOLL_CTL_ADD, clnt_sock, &event);
-				recv (clnt_sock, &myinform, sizeof (struct inform),0);
-				printf ("My inform cpu, memory: %s %s\n", &myinform.cpu, &myinform.memory);
+				recv (clnt_sock, &client, sizeof (struct inform),0);
+				printf ("My inform cpu: %s\n", client->cpu);
+				printf ("My inform memory: %s\n", client->memory);
+				printf ("My inform user: %s\n", client->user);
 				printf("connected client: %d \n", clnt_sock);
 				
 			}
