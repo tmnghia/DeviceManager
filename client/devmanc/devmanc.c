@@ -7,6 +7,169 @@
 
 #include "devmanc.h"
 
+int sockfd          = -1;
+char srvIP[128]     = {0};
+int srvPort         = DEVMAN_SERVER_PORT;
+DEVMANC_OPER oper   = DEVMANC_OPER_INFO;
+
+DEVMAN_RET handleArgsOption(int argc, char **argv)
+{
+    int option          = 0;
+
+    // Getting argument options
+    while ((option = getopt (argc, argv, ":h:p:s")) != -1) {
+        switch (option)
+        {
+            case 'h':
+                sprintf(srvIP, "%s", optarg);
+                break;
+            case 'p':
+                srvPort = strtol(optarg, NULL, 10);
+                break;
+            case 's':
+                oper = DEVMANC_OPER_SHOW;
+                break;
+            default:
+                fprintf(stderr, "Invalid option: %c\n", option);
+                return DEVMAN_FAILURE;        
+        }
+    }
+
+    return DEVMAN_SUCCESS;
+}
+
+DEVMAN_RET main(int argc, char **argv)
+{
+    sprintf(srvIP, "%s", DEVMAN_SERVER_ADDRESS);
+
+    // Handle the command arguments
+    if (handleArgsOption(argc, argv) != DEVMAN_SUCCESS) {
+        fprintf(stderr, "Error when getting argument options\n");
+        return DEVMAN_FAILURE;
+    }
+
+    printf("Server IP: %s\n", srvIP);
+    printf("Server Port: %d\n", srvPort);
+
+    // Init socket connection
+    if (initSocket(&sockfd, srvIP, srvPort) != DEVMAN_SUCCESS) {
+        fprintf(stderr, "Error when initialzing socket\n");
+        return DEVMAN_FAILURE;
+    }
+
+    // Getting client list from server then show out
+    if (oper == DEVMANC_OPER_SHOW) {
+        handleClientShow();
+    } 
+    // Connecting to the server then send the device information
+    else if (oper == DEVMANC_OPER_INFO) {
+        handleClientInfo();
+    } 
+    // Invalid operation, putting error then exit.
+    else {
+        fprintf(stderr, "Invalid operation %d\n", oper);
+        return DEVMAN_FAILURE;
+    }
+
+    return DEVMAN_SUCCESS;
+}
+
+DEVMAN_RET handleClientShow(void)
+{
+    devManMsg *msg      = NULL;
+    int sent, sentBytes = 0;
+
+    msg = (devManMsg *)calloc(1, sizeof(devManMsg));
+    if (msg == NULL) {
+        printf("Error when allocating memory for client information\n");
+        return DEVMAN_FAILURE;
+    }
+
+    msg->msgID = DEVMAN_MSG_REQ_CLIENTS;
+    msg->payloadLen = 0;
+    sentBytes = sizeof(devManMsg);
+
+    printf("sent msgID: %d\n", msg->msgID);
+    printf("sent payloadLen: %d\n", msg->payloadLen);
+
+    sent = send(sockfd, msg, sentBytes, 0);
+    if (sent < sentBytes) {
+        fprintf(stderr, "Error when sending message.\n");
+        return DEVMAN_FAILURE;
+    }
+
+    if (msg != NULL)
+        free(msg);
+
+    return DEVMAN_SUCCESS;
+}
+
+DEVMAN_RET handleClientInfo(void)
+{
+    clientInfo *info    = NULL;
+    devManMsg *msg      = NULL;
+    int sent, sentBytes = 0;
+
+    info = (clientInfo *)calloc(1, sizeof(clientInfo));
+    if (info == NULL) {
+        printf("Error when allocating memory for client information\n");
+        return DEVMAN_FAILURE;
+    }
+
+    msg = (devManMsg *)calloc(1, sizeof(devManMsg));
+    if (msg == NULL) {
+        printf("Error when allocating memory for client information\n");
+        if (info != NULL)
+            free(info);
+
+        return DEVMAN_FAILURE;
+    }
+
+    // Getting client information
+    if (getDeviceInformation(info) != DEVMAN_SUCCESS ) {
+        printf("Error when getting device information\n");
+        if (info != NULL)
+            free(info);
+        if (msg != NULL)
+            free(msg);
+
+        return DEVMAN_FAILURE;
+    }
+
+    printf("Device Name: %s\n", info->name);
+    printf("Device CPU: %s\n", info->cpu);
+    printf("Device Memory: %s\n", info->memory);
+
+    // Sending client information
+    msg->msgID = DEVMAN_MSG_CLIENT_INFO;
+    msg->payloadLen = sizeof(clientInfo);
+    memcpy(msg->payload, info, sizeof(clientInfo));
+
+    clientInfo *sentInfo = NULL;
+    sentInfo = (clientInfo *)msg->payload;
+    sentBytes = sizeof(devManMsg) + sizeof(clientInfo);
+
+    printf("sent msgID: %d\n", msg->msgID);
+    printf("sent payloadLen: %d\n", msg->payloadLen);
+    printf("sent Device Name: %s\n", info->name);
+    printf("sent Device cpu: %s\n", info->cpu);
+    printf("sent Device memory: %s\n", info->memory);
+
+    sent = send(sockfd, msg, sentBytes, 0);
+    if (sent < sentBytes) {
+        fprintf(stderr, "Error when sending message.\n");
+        return DEVMAN_FAILURE;
+    }
+
+    if (info != NULL)
+        free(info);
+
+    if (msg != NULL)
+        free(msg);
+
+    return DEVMAN_SUCCESS;
+}
+
 void removeLeadingSpaces(char* str)
 {
     static char tmp[DEVMAN_MAX_STRING_LEN];
@@ -39,44 +202,7 @@ void removeNewline(char * str)
     }
 }
 
-DEVMAN_RET main()
-{
-    clientInfo *info    = NULL;
-    int sockfd          = -1;
-
-    info = (clientInfo *)calloc(1, sizeof(clientInfo));
-    if (info == NULL) {
-        printf("Error when allocating memory for client information\n");
-        return DEVMAN_FAILURE;
-    }
-
-    if (getDeviceInformation(info) != DEVMAN_SUCCESS ) {
-        printf("Error when getting device information\n");
-        return DEVMAN_FAILURE;
-    }
-
-    printf("Device Name: %s\n", info->name);
-    printf("Device CPU: %s\n", info->cpu);
-    printf("Device Memory: %s\n", info->memory);
-
-    if (initSocket(&sockfd) != DEVMAN_SUCCESS) {
-        fprintf(stderr, "Error when initialzing socket\n");
-        return DEVMAN_FAILURE;
-    }
-
-    int sent = send(sockfd, info, sizeof(clientInfo), 0);
-    printf("sent %d bytes\n", sent);
-
-    // while(1) {
-    // }
-
-    free(info);
-    info = NULL;
-
-    return DEVMAN_SUCCESS;
-}
-
-DEVMAN_RET initSocket(int *sockfd)
+DEVMAN_RET initSocket(int *sockfd, char *srvIP, int port)
 {
     struct sockaddr_in serv_addr;
     int rc;
@@ -86,13 +212,12 @@ DEVMAN_RET initSocket(int *sockfd)
         fprintf(stderr, "Error when creating socket\n");
         return DEVMAN_FAILURE;
     }
-    printf("Created socket: %d\n", *sockfd);
 
     serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(DEVMAN_SERVER_PORT);
+    serv_addr.sin_port = htons(port);
     // Convert the addresses from text to binary form
-    if (inet_pton(AF_INET, DEVMAN_SERVER_ADDRESS, &serv_addr.sin_addr) < 1) {
-        fprintf(stderr, "Invalid address: %s\n", DEVMAN_SERVER_ADDRESS);
+    if (inet_pton(AF_INET, srvIP, &serv_addr.sin_addr) < 1) {
+        fprintf(stderr, "Invalid address: %s\n", srvIP);
         return DEVMAN_FAILURE;
     }
 
