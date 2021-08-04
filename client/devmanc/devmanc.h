@@ -8,4 +8,6 @@ DEVMAN_RET getName(char *name);
 DEVMAN_RET getCPU(char *cpu);
 DEVMAN_RET getMemory(char *mem);
 
+DEVMAN_RET initSocket();
+
 #endif /* __DEVMANC_H__ */
