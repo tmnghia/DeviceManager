@@ -135,28 +135,23 @@ int main(int argc , char *argv[])
 	return 0;
 }
 
-void Write_int (int sfd, int number)
-{
+void Write_int (int sfd, int number) {
 	int converted_number = htonl(number);
 	write(sfd, &converted_number, sizeof(converted_number));
 }
 
-void Send_char (int sfd, char *data)
-{
+void Send_char (int sfd, char *data) {
 	memset(buffer, 0, 256);
 	read(sfd, buffer, 255);
-	if (strcmp(buffer, "OK") == 0)
-	{
+	if (strcmp(buffer, "OK") == 0) {
 		write(sfd , data , strlen(data));
 	}
 }
 
-void Send_int (int sfd, int ret)
-{
+void Send_int (int sfd, int ret) {
 	memset(buffer, 0, 256);
 	read(sfd, buffer, 255);
-	if (strcmp(buffer, "OK") == 0)
-	{
+	if (strcmp(buffer, "OK") == 0) {
 		Write_int(sfd, ret);
 	}
 }	

@@ -51,8 +51,7 @@ int main(int argc, char const *argv[])
     	return 0; 
 } 
 
-void Delete(char s[], char s1[])
-{
+void Delete(char s[], char s1[]) {
 	int len = strlen(s);
 	int len1 = strlen(s1);
 	int i;
@@ -68,8 +67,7 @@ void Delete(char s[], char s1[])
 	}
 }
 
-char *GetCPU(char *cpu)
-{   
+char *GetCPU(char *cpu) {   
     	memset(buffer, 0, sizeof(buffer)); 
     	memset(cpu, 0, sizeof(cpu));
     	FILE *file = popen("lshw -c cpu","r"); 
@@ -85,8 +83,7 @@ char *GetCPU(char *cpu)
     	Delete(cpu,"\n");
 }
 
-char *Getmemory(char *mem)
-{     
+char *Getmemory(char *mem) {     
     	memset(buffer, 0, sizeof(buffer)); 
     	memset(mem, 0, sizeof(mem));
     	FILE *file = popen("lshw -c memory","r"); 
@@ -103,8 +100,7 @@ char *Getmemory(char *mem)
     	strcat(mem, " System memory");
 }
 
-char *Getusername(char *name)
-{
+char *Getusername(char *name) {
     	memset(buffer, 0, sizeof(buffer)); 
     	memset(name, 0, sizeof(name));
     	FILE *file = popen("users","r"); 
@@ -114,15 +110,13 @@ char *Getusername(char *name)
     	Delete(name,"\n");
 }
 
-void GetInfo(char *name, char *cpu, char *mem)
-{
+void GetInfo(char *name, char *cpu, char *mem) {
 	Getusername(name);
     	GetCPU(cpu);
     	Getmemory(mem);
 }
 
-void Send_char (int sfd, char *data)
-{
+void Send_char (int sfd, char *data) {
 	memset(buffer, 0, 256);
 	read(sfd, buffer, 255);
 	if (strcmp(buffer, "OK") == 0) {

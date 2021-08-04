@@ -1,8 +1,7 @@
 #ifndef _DEVMANC_H_
 #define _DEVMANC_H_
 
-typedef struct
-{
+typedef struct {
 	char cpu[256]; 
 	char user[256];
 	char memory[256];

@@ -1,8 +1,7 @@
 #ifndef _DEVMAND_H_
 #define _DEVMAND_H_
 
-typedef struct
-{
+typedef struct {
 	char ip[256];
 	int port;
 	char user[256];

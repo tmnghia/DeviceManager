@@ -79,14 +79,12 @@ int main(int argc, char const *argv[])
     	return 0; 
 } 
 
-void Recv_char (int sfd, char *data)
-{
+void Recv_char (int sfd, char *data) {
 	write(sfd, ok, strlen(ok));
     	read(sfd, data, 255);
 }
 
-int Recv_int (int sfd, int ret)
-{
+int Recv_int (int sfd, int ret) {
 	write(sfd, ok, strlen(ok));
     	read(sfd, &ret, sizeof(ret));
     	ret = ntohl(ret);

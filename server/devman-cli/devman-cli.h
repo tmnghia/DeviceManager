@@ -1,8 +1,7 @@
 #ifndef _DEVMAN_CLI_H_
 #define _DEVMAN_CLI_H_
 
-typedef struct
-{
+typedef struct {
 	int id;
 	char ip[256];
 	int port;
