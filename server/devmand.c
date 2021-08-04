@@ -20,8 +20,12 @@ typedef struct inform
    char  user[128];
 }clientInfo;
 
+typedef struct devmanMsg 
+{
+   int msgID;
+   clientInfo client;
+}devmanMsg;
 
-clientInfo *client;
 int main(int argc, char *argv[])
 {
 	int serv_sock, clnt_sock;
@@ -33,6 +37,9 @@ int main(int argc, char *argv[])
 	struct epoll_event *ep_events;
 	struct epoll_event event;
 	int epfd, event_cnt;
+	devmanMsg Msg;
+	clientInfo *client;
+	client = (clientInfo*) calloc(1, sizeof(clientInfo));
 
 	if(argc!=2) {
 		printf("Usage : %s <port>\n", argv[0]);
@@ -65,7 +72,9 @@ int main(int argc, char *argv[])
 			puts("epoll_wait() error");
 			break;
 		}
-
+		
+		
+		
 		for(i=0; i<event_cnt; i++)
 		{
 			if(ep_events[i].data.fd==serv_sock)
@@ -75,8 +84,10 @@ int main(int argc, char *argv[])
 				event.events=EPOLLIN;
 				event.data.fd=clnt_sock;
 				epoll_ctl(epfd, EPOLL_CTL_ADD, clnt_sock, &event);
-				recv (clnt_sock, &client, sizeof (struct inform),0);
+				recv (clnt_sock,&Msg, sizeof (struct devmanMsg),0);
+				
 				printf ("My inform cpu: %s\n", client->cpu);
+				
 				printf ("My inform memory: %s\n", client->memory);
 				printf ("My inform user: %s\n", client->user);
 				printf("connected client: %d \n", clnt_sock);
@@ -93,8 +104,10 @@ int main(int argc, char *argv[])
 					}
 					else
 					{
-						write(ep_events[i].data.fd, buf, str_len);    // echo!
+						write(ep_events[i].data.fd, buf, str_len);    
+						write(server_sock, buf, str_len);
 						
+							
 					}
 	
 			}
@@ -103,6 +116,7 @@ int main(int argc, char *argv[])
 	close(serv_sock);
 	close(epfd);
 	free (ep_events);
+	free (client);
 	
 	return 0;
 }

@@ -16,6 +16,13 @@ typedef struct inform
    char  user[128];
 }clientInfo;
 
+typedef struct devmanMsg 
+{
+   int msgID;
+   clientInfo client;
+}devmanMsg;
+
+
 char buffer[1024];
 void error_handling(char *message);
 int  getMemory(char *mem);
@@ -32,8 +39,7 @@ int main(int argc, char *argv[])
 	char message[BUF_SIZE];
 	int str_len;
 	struct sockaddr_in serv_adr;
-	
-
+	devmanMsg Msg;
 	if(argc!=3) {
 		printf("Usage : %s <IP> <port>\n", argv[0]);
 		exit(1);
@@ -48,12 +54,14 @@ int main(int argc, char *argv[])
 	serv_adr.sin_addr.s_addr=inet_addr(argv[1]);
 	serv_adr.sin_port=htons(atoi(argv[2]));
 	
+	Msg.msgID= inet_addr(argv[1]);
+	
 	if(connect(sock, (struct sockaddr*)&serv_adr, sizeof(serv_adr))==-1)
 		error_handling("connect() error!");
 	else
 		printf("Connected...........\n");
 	   
-	    clientInfo *client = NULL;
+	    clientInfo *client;
 
             client = (clientInfo*) calloc(1, sizeof(clientInfo));
 	    getCPU(client->cpu);
@@ -65,14 +73,12 @@ int main(int argc, char *argv[])
 	    getMemory(client->memory);
 	    printf("memory: %s\n", client->memory);
 
-	    
-	    
-
 	 while(1)
 	 {	 
 	       
                send (sock,client, sizeof(struct inform),0);
-               //printf ("Inform sent to Server\n");          
+               send (sock,&Msg, sizeof( struct devmanMsg),0);
+              // printf ("Inform sent to Server\n");          
         } 
 	close(sock);
 	free(client);

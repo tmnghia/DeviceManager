@@ -2,13 +2,14 @@ CC = g++
 CFLAGS = -g -Wall -ansi
 
 
-all: echo_client echo_epollserv
+all: devmanc devmand devmand-cli
 
-echo_client: echo_client.c
-	$(CC) $(CFLAGS) echo_client.c -o echo_client
-echo_epollserv: echo_epollserv.c
-	$(CC) $(CFLAGS) echo_epollserv.c -o echo_epollserv
-
+devmanc: devmanc.c
+	$(CC) $(CFLAGS) devmanc.c -o devmanc
+devmand: devmand.c
+	$(CC) $(CFLAGS) devmand.c -o devmand
+devmand-cli: devmand-cli.c
+	$(CC) $(CFLAGS) devmand-cli.c -o devmand-cli
 clean:
-	rm -f echo_client echo_epollserv
+	rm -f devmanc devmand
 
