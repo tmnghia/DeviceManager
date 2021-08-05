@@ -8,8 +8,10 @@
 #define DEVMAN_MAX_CLIENT_NUM   5
 #define DEVMAN_MAX_BUFFER_SIZE  1024
 
-#define DEVMAN_MSG_CLIENT_JOIN  1
-#define DEVMAN_MSG_GET_CLIENTS  2
+#define DEVMAN_MSG_CLIENT_INFO  1
+#define DEVMAN_MSG_REQ_CLIENTS  2
+#define DEVMAN_MSG_RES_CLIENTS  3
+#define DEVMAN_MSG_RES_END      4
 
 typedef struct clientInfo
 {
@@ -20,7 +22,8 @@ typedef struct clientInfo
 
 typedef struct devManMsg {
     int         msgID;
-    clientInfo  info;
+    int         payloadLen;
+    char        payload[0];
 } devManMsg;
 
 typedef enum
